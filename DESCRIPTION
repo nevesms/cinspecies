@@ -1,0 +1,23 @@
+Package: cinspecies
+Title: Climate Intelligence for Niche Simulation of Species
+Version: 0.1.0
+Authors@R: person("Mateus", "dos Santos Neves", , "mateus.santos@ufpr.br", role = c("aut", "cre"))
+Description: Automated pipeline for global and regional ecological niche modeling across terrestrial and marine ecosystems. Integrates GBIF occurrence data, automated spatial cleaning and thinning, collinearity filtering (VIF), multi-algorithm ensemble machine learning, and future climate projections across multiple CMIP6 General Circulation Models (GCMs).
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports: 
+    CoordinateCleaner,
+    geodata,
+    graphics,
+    rgbif,
+    rnaturalearth,
+    sdm,
+    sdmpredictors,
+    sf,
+    spThin,
+    stats,
+    terra,
+    usdm,
+    utils
+Config/roxygen2/version: 8.1.1
