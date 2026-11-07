@@ -21,3 +21,5 @@ Imports:
     usdm,
     utils
 Config/roxygen2/version: 8.1.1
+URL: https://github.com/nevesms/cinspecies
+BugReports: https://github.com/nevesms/cinspecies/issues
