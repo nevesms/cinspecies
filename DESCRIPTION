@@ -1,25 +1,60 @@
 Package: cinspecies
-Title: Climate Intelligence for Niche Simulation of Species
-Version: 0.1.0
-Authors@R: person("Mateus", "dos Santos Neves", , "mateus.santos@ufpr.br", role = c("aut", "cre"))
-Description: Automated pipeline for global and regional ecological niche modeling across terrestrial and marine ecosystems. Integrates GBIF occurrence data, automated spatial cleaning and thinning, collinearity filtering (VIF), multi-algorithm ensemble machine learning, and future climate projections across multiple CMIP6 General Circulation Models (GCMs).
+Title: Climate Intelligence for Niche Simulation of Forest and Grassland Plant Species
+Version: 0.2.0
+Authors@R: person("Mateus", "dos Santos Neves", , "mateus.santos@ufpr.br", role = c("aut", "cre", "cph"))
+Description: Automated workflow for ecological niche and species distribution
+    modelling of terrestrial plants - trees, shrubs, natural-grassland species,
+    lianas and epiphytes - that couples ensemble models with land use and land
+    cover to map realized habitat at 30 m. Records are retrieved from GBIF
+    through 'rgbif' and filtered for plants (cultivated and planted records,
+    fossils, uncertain coordinates), cleaned with 'CoordinateCleaner'
+    (Zizka et al. 2019 <doi:10.1111/2041-210X.13152>) and thinned with 'spThin'
+    (Aiello-Lammens et al. 2015 <doi:10.1111/ecog.01132>). The calibration area
+    (M) can be derived automatically (Barve et al. 2011
+    <doi:10.1016/j.ecolmodel.2011.02.011>). Predictors are WorldClim 2.1
+    (Fick and Hijmans 2017 <doi:10.1002/joc.5086>), optional SoilGrids and
+    topography, filtered by VIF with 'usdm'. Models are fitted and
+    ensembled with 'sdm' (Naimi and Araujo 2016 <doi:10.1111/ecog.01881>),
+    binarised at the maximum TSS threshold (Liu et al. 2013
+    <doi:10.1111/jbi.12058>), combined with MapBiomas (Souza et al. 2020
+    <doi:10.3390/rs12172735>) or ESA WorldCover habitat chosen by life form,
+    projected to CMIP6 futures (Eyring et al. 2016
+    <doi:10.5194/gmd-9-1937-2016>) averaged across GCMs, and summarised in
+    geodetic area reports of potential and realized habitat.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Imports: 
+Depends:
+    R (>= 4.1.0),
+    sdm (>= 1.2-40)
+Imports:
     CoordinateCleaner,
-    geodata,
+    geodata (>= 0.6-2),
     graphics,
-    rgbif,
-    rnaturalearth,
-    sdm,
-    sdmpredictors,
-    sf,
+    methods,
+    rgbif (>= 3.7.0),
     spThin,
     stats,
-    terra,
+    terra (>= 1.7-0),
+    tools,
     usdm,
     utils
-Config/roxygen2/version: 8.1.1
+Suggests:
+    dismo,
+    earth,
+    gbm,
+    glmnet,
+    kernlab,
+    maxnet,
+    mda,
+    mgcv,
+    randomForest,
+    rJava,
+    rpart,
+    RSNNS,
+    testthat (>= 3.0.0),
+    tree
+Config/testthat/edition: 3
 URL: https://github.com/nevesms/cinspecies
 BugReports: https://github.com/nevesms/cinspecies/issues
+Config/roxygen2/version: 8.1.0

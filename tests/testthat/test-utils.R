@@ -1,0 +1,32 @@
+test_that("helpers", {
+  expect_equal(cinspecies:::.future_period(2050), "2041-2060")
+  expect_equal(cinspecies:::.future_period(2090), "2081-2100")
+  expect_error(cinspecies:::.future_period(2010))
+  expect_length(cinspecies:::.resolve_gcms("default"), 5)
+  expect_error(cinspecies:::.resolve_gcms("FAKE-GCM"), "Invalid GCM")
+  expect_error(cinspecies:::.check_resolution(1), "resolution")
+  r <- terra::rast(nrows = 2, ncols = 2, nlyrs = 19)
+  names(r) <- paste0("wc2.1_30s_bio_", 1:19)
+  expect_equal(names(cinspecies:::.std_bio_names(r)), paste0("bio", 1:19))
+  expect_equal(cinspecies:::.norm_txt("Paraná"), "parana")
+  ref <- cins_references(print = FALSE)
+  expect_true(all(c("step", "reference", "doi") %in% names(ref)))
+  expect_true(nrow(cins_references("Algorithms", algorithms = "rf", print = FALSE)) == 1)
+  expect_error(model_threshold(NULL, 1.5), "\\(0, 1\\)")
+  expect_error(model_threshold(NULL, "bogus"), "Unknown")
+})
+
+test_that("deprecated cins_pipeline forwards and rejects marine", {
+  expect_error(suppressWarnings(cins_pipeline("x", ecosystem = "marine")), "Marine")
+  expect_error(suppressWarnings(cins_pipeline("x")), "life_form")
+})
+
+test_that("algorithm catalogue covers neural networks, ML, regression and envelopes", {
+  a <- list_algorithms()
+  expect_true(all(c("Machine learning", "Neural network", "Regression", "Envelope / distance") %in% a$category))
+  expect_true(all(c("mlp", "rbf", "rf", "brt", "svm", "maxnet", "gam") %in% a$code))
+  expect_error(cinspecies:::.check_algorithms("nnet"), "Unknown")
+  expect_length(list_gcms(), 26)
+  st <- ensemble_setting(ensemble_min = 0.5)
+  expect_equal(st$expr, "TSS >= 0.5")
+})

@@ -2,17 +2,36 @@
 % Please edit documentation in R/area_reports.R
 \name{calculate_area_report}
 \alias{calculate_area_report}
-\title{Calculate Suitable and Realized Area (km2) with Habitat Loss Metrics}
+\title{Potential (climatic) and realized (LULC) suitable area per administrative unit}
 \usage{
 calculate_area_report(
   binary_raster,
-  lulc_binary_raster = NULL,
+  realized_weight = NULL,
   area_report = "none",
   output_dir = getwd(),
   species_name = "Species",
-  suffix = "native"
+  suffix = "native",
+  cache_dir = cins_cache_dir()
 )
 }
+\arguments{
+\item{binary_raster}{\code{SpatRaster}. Potential binary map (1 = suitable). When
+LULC is used, pass the potential binary at the habitat grid so that both
+areas share the same grid.}
+
+\item{realized_weight}{\code{SpatRaster} or \code{NULL}. Realized habitat weight
+(binary x habitat fraction) from \code{\link[=apply_lulc_mask]{apply_lulc_mask()}}.}
+
+\item{area_report}{\code{"none"}, \code{"total"}, \code{"continent"}, \code{"country"} or \code{"state"}.}
+
+\item{output_dir, species_name, suffix}{Output file naming.}
+
+\item{cache_dir}{Directory where boundaries are cached.}
+}
+\value{
+Data frame with \code{Unit}, \code{Potential_Climatic_km2}, and, with LULC,
+\code{Realized_LULC_km2} and \code{Habitat_Loss_pct}; also written to CSV.
+}
 \description{
-Calculate Suitable and Realized Area (km2) with Habitat Loss Metrics
+Potential (climatic) and realized (LULC) suitable area per administrative unit
 }

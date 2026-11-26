@@ -1,0 +1,11 @@
+bibentry(
+  bibtype = "Manual",
+  title = "cinspecies: Climate Intelligence for Niche Simulation of Forest and Grassland Plant Species",
+  author = person("Mateus", "dos Santos Neves"),
+  year = "2026",
+  note = paste("R package version", meta$Version),
+  url = "https://github.com/nevesms/cinspecies",
+  textVersion = paste0("dos Santos Neves, M. (2026). cinspecies: Climate Intelligence for Niche ",
+                       "Simulation of Forest and Grassland Plant Species. R package version ",
+                       meta$Version, ". https://github.com/nevesms/cinspecies")
+)
