@@ -20,7 +20,7 @@
 #' climate surfaces for global land areas. International Journal of
 #' Climatology, 37, 4302-4315. \doi{10.1002/joc.5086}
 #' @export
-get_climate <- function(region = "global", resolution = 5, vif_cutoff = 10, seed = NULL,
+get_climate <- function(region = "global", resolution = 2.5, vif_cutoff = 5, seed = NULL,
                         cache_dir = cins_cache_dir()) {
   .check_resolution(resolution)
   .msg("Climate", "Loading WorldClim 2.1 bioclimatic variables (", resolution, " arc-min)...")
@@ -53,7 +53,7 @@ get_climate <- function(region = "global", resolution = 5, vif_cutoff = 10, seed
 #' it and a simulation study evaluating their performance. Ecography, 36, 27-46.
 #' \doi{10.1111/j.1600-0587.2012.07348.x}
 #' @export
-select_predictors <- function(predictors, vif_cutoff = 10, keep = NULL, seed = NULL) {
+select_predictors <- function(predictors, vif_cutoff = 5, keep = NULL, seed = NULL) {
   test <- setdiff(names(predictors), keep)
   if (length(test) < 2) return(predictors)
   .msg("Predictors", "Stepwise VIF (cutoff = ", vif_cutoff, ")...")
@@ -82,7 +82,7 @@ select_predictors <- function(predictors, vif_cutoff = 10, keep = NULL, seed = N
 #' Project Phase 6 (CMIP6) experimental design and organization. Geoscientific
 #' Model Development, 9, 1937-1958. \doi{10.5194/gmd-9-1937-2016}
 #' @export
-get_future_climate <- function(region = "global", resolution = 5, future_scenario = "ssp585",
+get_future_climate <- function(region = "global", resolution = 2.5, future_scenario = "ssp585",
                                future_year = 2050, gcms = "default", selected_vars = NULL,
                                cache_dir = cins_cache_dir()) {
   .check_resolution(resolution)

@@ -26,7 +26,7 @@
 #' @param cache_dir Directory where data are cached.
 #' @return List with `continuous`, `binary`, `threshold`.
 #' @export
-project_niche <- function(cins_result, target_region, resolution = 5, future_scenario = NULL,
+project_niche <- function(cins_result, target_region, resolution = 2.5, future_scenario = NULL,
                           future_year = 2050, gcms = "default", static_layers = NULL,
                           biotic_layers = NULL, new_climate = NULL, uncertainty = FALSE,
                           output_dir = getwd(), species_name = "Species",

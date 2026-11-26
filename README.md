@@ -159,7 +159,7 @@ See `?cins_model` for the complete list.
 | `future_scenario` / `future_year` | `NULL` / `2070` | One or more SSPs and years (2021–2100). |
 | `gcms` | `"default"` | 5 GCMs; `"all"` (26) or any vector from `list_gcms()`. |
 | `future_climate` | `NULL` | User climate (named list of rasters) for any other GCM or source. |
-| `resolution` | `5` | Climate resolution (arc-min): 10, 5, 2.5, 0.5. |
+| `resolution` | `2.5` | Climate resolution (arc-min): 10 (~18 km), 5 (~9 km), 2.5 (~4.5 km), 0.5 (30″, ~1 km). |
 | `soil_vars`, `soil_depth`, `topography` | `NULL`, `5`, `FALSE` | Optional static predictors. |
 | `lulc_source` | `"auto"` | `"auto"`, `"mapbiomas"`, `"esa"`, raster path/`SpatRaster`, or `NULL`. |
 | `mapbiomas_collection` / `lulc_year` | `11` / `NULL` | MapBiomas collection and year (`NULL` = most recent: 2025 for Collection 11). |

@@ -4,7 +4,7 @@
 \alias{select_predictors}
 \title{Remove collinear predictors with stepwise VIF}
 \usage{
-select_predictors(predictors, vif_cutoff = 10, keep = NULL, seed = NULL)
+select_predictors(predictors, vif_cutoff = 5, keep = NULL, seed = NULL)
 }
 \arguments{
 \item{predictors}{\code{SpatRaster}.}

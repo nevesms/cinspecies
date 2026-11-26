@@ -6,7 +6,7 @@
 \usage{
 get_future_climate(
   region = "global",
-  resolution = 5,
+  resolution = 2.5,
   future_scenario = "ssp585",
   future_year = 2050,
   gcms = "default",

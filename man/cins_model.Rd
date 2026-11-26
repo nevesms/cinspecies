@@ -17,7 +17,7 @@ cins_model(
   future_year = 2070,
   gcms = "default",
   future_climate = NULL,
-  resolution = 5,
+  resolution = 2.5,
   soil_vars = NULL,
   soil_depth = 5,
   topography = FALSE,
@@ -96,7 +96,7 @@ source not distributed by WorldClim: each element (named e.g.
 \code{"ssp245_2070"}) is a \code{SpatRaster}, file path, or list of them (averaged).
 Used instead of \code{future_scenario}/\code{gcms}.}
 
-\item{resolution}{Climate resolution (arc-min): 10, 5, 2.5 or 0.5.}
+\item{resolution}{Climate resolution (arc-min): 10, 5, 2.5 (default, ~4.5 km) or 0.5 (30 arc-s, ~1 km).}
 
 \item{soil_vars, soil_depth, topography}{Static predictors (see \code{\link[=get_static_predictors]{get_static_predictors()}}).}
 

@@ -7,7 +7,7 @@
 project_niche(
   cins_result,
   target_region,
-  resolution = 5,
+  resolution = 2.5,
   future_scenario = NULL,
   future_year = 2050,
   gcms = "default",

@@ -6,8 +6,8 @@
 \usage{
 get_climate(
   region = "global",
-  resolution = 5,
-  vif_cutoff = 10,
+  resolution = 2.5,
+  vif_cutoff = 5,
   seed = NULL,
   cache_dir = cins_cache_dir()
 )
