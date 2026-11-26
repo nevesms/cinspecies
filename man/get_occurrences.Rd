@@ -13,7 +13,8 @@ get_occurrences(
   max_uncertainty_m = 10000,
   exclude_cultivated = TRUE,
   native_only = FALSE,
-  thin_km = 10,
+  cc_tests = c("capitals", "centroids", "equal", "gbif", "institutions", "seas", "zeros"),
+  thin_km = 5,
   alt_min = NULL,
   alt_max = NULL,
   seed = NULL,
@@ -41,6 +42,9 @@ cultivated records.}
 
 \item{native_only}{Logical. Also remove records flagged as introduced,
 invasive or naturalised.}
+
+\item{cc_tests}{Character. CoordinateCleaner tests (see
+\code{CoordinateCleaner::clean_coordinates()}), e.g. add \code{"outliers"} or \code{"urban"}.}
 
 \item{thin_km}{Numeric. Minimum distance (km) between records.}
 

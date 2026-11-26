@@ -2,7 +2,7 @@
 
 `cinspecies` (Climate Intelligence for Niche Simulation of Species) is an R package that automates ecological niche / species distribution modelling for **terrestrial plants**: trees, shrubs, natural-grassland (campo) species, lianas and epiphytes. It couples multi-algorithm ensemble models with **land use and land cover (LULC)** so that the output is not only the potential climatic niche but the **realized habitat at 30 m**, in the present and under CMIP6 futures, with geodetic area reports of habitat loss.
 
-A single call to `cins_model()` runs every step. All defaults are literature-based and every step is referenced (`cins_references()`).
+A single call to `cins_model()` runs every step, for one or several species. All defaults are literature-based, every option can be changed by the user, and every step is referenced (`cins_references()`).
 
 ## Installation
 
@@ -11,7 +11,7 @@ install.packages("remotes")
 remotes::install_github("nevesms/cinspecies")
 
 # algorithm packages used by sdm (install those you need)
-install.packages(c("randomForest", "maxnet", "glmnet", "mgcv", "gbm", "e1071", "earth", "rpart"))
+install.packages(c("randomForest", "maxnet", "glmnet", "mgcv", "gbm", "kernlab", "RSNNS", "earth", "mda", "tree", "rpart"))
 ```
 
 ## Quick start
@@ -20,29 +20,90 @@ install.packages(c("randomForest", "maxnet", "glmnet", "mgcv", "gbm", "e1071", "
 library(cinspecies)
 
 m <- cins_model(
-  species = "Araucaria angustifolia",
+  species = "Ilex paraguariensis",
   life_form = "tree",            # tree | shrub | grassland | liana | epiphyte
-  savanna_habitat = FALSE,       # must be set: does Savanna Formation count as habitat?
-  region = "auto",               # calibration area (M) from the records
-  future_scenario = c("ssp245", "ssp585"),
-  future_year = c(2050, 2090),
+  savanna_habitat = TRUE,        # must be set: does Savanna Formation count as habitat?
+  region = c("Brazil", "Argentina", "Paraguay", "Uruguay"),
+  proj_region = c("Brazil:Parana", "Brazil:Santa Catarina", "Brazil:Rio Grande do Sul"),
+  future_scenario = c("ssp245", "ssp585"), future_year = 2070,
+  gcms = c("MIROC6", "IPSL-CM6A-LR", "MRI-ESM2-0"),
+  algorithms = c("rf", "maxnet", "glm"),
   area_report = "state",
-  replicates = 5,
   seed = 42
 )
-m                      # summary
-m$native$area_table    # potential vs realized km2 and habitat loss per state
-cins_references()      # what to cite
+m                           # summary
+m$evaluation                # AUC, TSS ... per model, background set and replicate
+m$projected$conflict_table  # which land uses occupy the climatically suitable area
+m$area_change               # net change, gains and losses per state
+m$elevation                 # mean elevation of suitable areas and altitudinal shift
+cins_references()           # what to cite
 ```
 
-Epiphytes and lianas can use their hosts (phorophytes) as biotic predictors:
+### Defaults and how to change them
+
+The defaults follow a complete, published-style workflow, and every step can be changed:
+
+| Step | Default | Change with |
+| :--- | :--- | :--- |
+| Collinearity | stepwise VIF < 5 | `vif_cutoff` |
+| Background | 3 independent sets of 1000 random points | `n_pseudo_sets`, `n_pseudo`, `bg_method = "eRandom"` |
+| Partitioning | 3 random 80/20 splits per algorithm and set | `cv_method = "cv"`/`"boot"`, `replicates`, `test_percent`, `cv_folds` |
+| Ensemble | TSS-weighted mean of models with TSS >= 0.5 | `ensemble_method`, `ensemble_stat`, `ensemble_min = NULL` |
+| Threshold | maxTSS on the ensemble | `binary_threshold = 0.6`, `"sp=se"`, `"P10"`, ... |
+| Uncertainty | coefficient of variation among models | `uncertainty = FALSE` |
+| Land cover | MapBiomas Collection 11 at 30 m, water masked | `mapbiomas_collection`, `lulc_year`, `lulc_resolution`, `mask_water`, `lulc_classes`, `lulc_groups` |
+| Conflict table | land-use classes inside the suitable area | `conflict_table = FALSE` |
+| Altitudinal shift | mean elevation of suitable cells per period | `elevation_shift = FALSE`, `dem`, `elevation_basis` |
+
+### Algorithms
+
+Any combination of the 22 algorithms implemented in `sdm` can be ensembled (`list_algorithms()`):
+
+| Category | Codes |
+| :--- | :--- |
+| Machine learning | `rf`, `brt` (`gbm`), `svm`, `cart`, `rpart`, `mars`, `fda`, `mda` |
+| Neural networks | `mlp` (multi-layer perceptron), `rbf` (radial basis function) |
+| Maximum entropy / likelihood | `maxnet`, `maxent` (Java), `maxlike` |
+| Regression | `glm`, `glmpoly`, `glmnet`, `gam` |
+| Envelope / distance | `bioclim`, `bioclim.dismo`, `domain.dismo`, `mahal.dismo` |
+
+```r
+cins_model(..., algorithms = c("rf", "brt", "svm", "mlp", "rbf", "maxnet", "gam"))
+```
+
+### Climate models
+
+All 26 CMIP6 GCMs distributed by WorldClim 2.1 can be averaged (`list_gcms()`; `gcms = "all"` or a vector). Climate from any other source, such as other GCMs, downscaled products or bias-corrected data, enters through `future_climate`, a named list of rasters (several per scenario are averaged):
+
+```r
+cins_model(..., future_climate = list(
+  ssp245_2070 = c("gcmA_ssp245_2070.tif", "gcmB_ssp245_2070.tif"),
+  ssp585_2070 = c("gcmA_ssp585_2070.tif", "gcmB_ssp585_2070.tif")
+))
+```
+
+### Several species
+
+Give several names to model them in one call (one sub-folder per species), with a summary table and richness maps of potential and realized habitat for each period:
+
+```r
+mm <- cins_model(
+  species = c("Araucaria angustifolia", "Ocotea porosa", "Butia eriospatha"),
+  life_form = c("tree", "tree", "shrub"),
+  savanna_habitat = c(FALSE, FALSE, TRUE),
+  region = "auto", future_scenario = "ssp585", future_year = 2070
+)
+mm$summary
+plot(mm)
+```
+
+Dependent species (epiphytes, lianas, hemiparasites) use their hosts as biotic predictors:
 
 ```r
 m_epi <- cins_model(
   species = "Vriesea incurvata", life_form = "epiphyte", savanna_habitat = FALSE,
-  host_species = c("Araucaria angustifolia"), host_life_form = "tree",
-  region = c("Brazil:Parana", "Brazil:Santa Catarina", "Brazil:Rio Grande do Sul"),
-  algorithms = c("rf", "maxnet", "gam"), replicates = 5, seed = 1
+  host_species = c("Araucaria angustifolia", "Ocotea porosa"), host_life_form = "tree",
+  region = c("Brazil:Parana", "Brazil:Santa Catarina", "Brazil:Rio Grande do Sul")
 )
 ```
 
@@ -57,61 +118,68 @@ m <- cins_model("Ocotea porosa", life_form = "tree", savanna_habitat = FALSE,
 
 | Step | What is done | Main tools |
 | :--- | :--- | :--- |
-| 1. Records | GBIF query by accepted name (synonyms resolved, kingdom Plantae checked); removal of fossils, living collections, cultivated/managed records, records before `year_min` (1970) and with coordinate uncertainty > 10 km; CoordinateCleaner tests (capitals, centroids, equal, GBIF HQ, institutions, seas, zeros); optional elevation filter (30″ DEM); spatial thinning; removal of records inside forest plantations (MapBiomas class 9). | `rgbif`, `CoordinateCleaner`, `spThin`, `geodata` |
-| 2. Calibration area (M) | `region = "auto"`: convex hull of the records + `m_buffer_km` (300 km), clipped to land. Or continents, countries, `"Country:State"`, polygons. | `terra`, GADM |
-| 3. Predictors | WorldClim 2.1 BIO1–BIO19; optional SoilGrids 2.0 (`soil_vars`) and elevation/slope (`topography = TRUE`); stepwise VIF. | `geodata`, `usdm` |
+| 1. Records | GBIF query by accepted name (synonyms resolved, kingdom Plantae checked); removal of fossils, living collections, cultivated/managed records, records before `year_min` (1970) and with coordinate uncertainty > 10 km; CoordinateCleaner tests (`cc_tests`); optional elevation filter; 5 km thinning; removal of records inside forest plantations (MapBiomas class 9). | `rgbif`, `CoordinateCleaner`, `spThin`, `geodata` |
+| 2. Calibration area (M) | `region = "auto"`: convex hull of the records + `m_buffer_km` (300 km), clipped to land; or continents, countries, `"Country:State"`, polygons. | `terra`, GADM |
+| 3. Predictors | WorldClim 2.1 BIO1–BIO19; optional SoilGrids 2.0 and elevation/slope; stepwise VIF. | `geodata`, `usdm` |
 | 4. Hosts | Each host is modelled first; host suitability × host habitat fraction enters as a predictor. | — |
-| 5. Ensemble | Random background, sub-sampling cross-validation, TSS-weighted ensemble; evaluation (AUC, TSS, Kappa, COR) and variable importance exported. | `sdm` |
-| 6. Threshold | **maxTSS** (max sensitivity + specificity) computed on the ensemble, by default; any numeric value given by the user overrides it. | `sdm` |
-| 7. LULC | Suitability downscaled to **30 m** and combined with native-habitat classes chosen from `life_form` (MapBiomas in Brazil, ESA WorldCover elsewhere). | `terra` |
-| 8. Transfer | Other regions (`proj_region`) and CMIP6 futures (every SSP × year, mean of several GCMs). The calibration threshold is reused so that maps are comparable. | `geodata` |
-| 9. Areas | Geodetic area of potential and realized habitat and % habitat loss per continent, country or state; each cell is counted in a single unit. | `terra`, GADM |
+| 5. Ensemble | Background sets × partitions × algorithms; ensemble of the models above the performance filter; evaluation, variable importance and CV uncertainty exported. | `sdm` |
+| 6. Threshold | maxTSS computed on the ensemble; a user value overrides it. | `sdm` |
+| 7. LULC | Suitability downscaled (bilinear) to the 30 m MapBiomas grid and combined with native-habitat classes chosen from `life_form`; water excluded; conflict table of land uses inside the suitable area. | `terra` |
+| 8. Transfer | Other regions and CMIP6 futures (every SSP × year, mean of GCMs) or user climate; the calibration threshold is reused. | `geodata` |
+| 9. Reports | Areas per continent/country/state, net change, gains and losses, and altitudinal shift of suitable areas. | `terra`, GADM |
 
 ### Habitat classes by life form
 
-| `life_form` | MapBiomas Brazil (Collection 10) | ESA WorldCover |
+| `life_form` | MapBiomas Brazil (Collections 10/11) | ESA WorldCover |
 | :--- | :--- | :--- |
 | `tree`, `liana`, `epiphyte` | 3 Forest Formation, 5 Mangrove, 6 Floodable Forest, 49 Wooded Sandbank Vegetation | trees + mangroves |
 | `shrub` | 12 Grassland, 29 Rocky Outcrop, 49 Wooded Sandbank Vegetation, 50 Herbaceous Sandbank Vegetation | shrubs |
 | `grassland` | 11 Wetland, 12 Grassland, 29 Rocky Outcrop, 50 Herbaceous Sandbank Vegetation | grassland + wetland |
 | + `savanna_habitat = TRUE` | adds 4 Savanna Formation | adds trees to shrubs |
 
-`savanna_habitat` has **no default on purpose**: whether the Savanna Formation is habitat is an ecological decision (it usually is for shrubs and for Cerrado species of any life form, and usually is not for forest species), so the function stops with an error if it is not set while MapBiomas classes are derived from `life_form`. Classes can always be given explicitly with `lulc_classes`.
+`savanna_habitat` has **no default on purpose**: whether the Savanna Formation is habitat is an ecological decision (usually yes for shrubs and Cerrado species, and for understory forest species that also occur in savanna formations; usually no for strictly forest species), so the function stops with an error if it is not set while MapBiomas classes are derived from `life_form`. Classes can always be given explicitly with `lulc_classes`, and the grouping of the conflict table with `lulc_groups` (see `mapbiomas_groups()`).
 
 ### Resolution of realized-habitat maps
 
-Realized maps are produced at **30 m by default** (`lulc_resolution = 30`, the MapBiomas native resolution). The continuous suitability is bilinearly resampled to that grid and multiplied by habitat. Larger values (e.g. `lulc_resolution = 250`) aggregate habitat into the fraction of habitat per cell. That runs faster, but it blurs habitat edges and fragmentation and **reduces the spatial accuracy of realized maps and areas**, and the function warns about this. ESA WorldCover (as distributed by `geodata`) is limited to ~1 km. At 30 m, large regions produce very large rasters: the function reports the grid size before processing, and all outputs are written as compressed GeoTIFFs.
+Realized maps are produced at **30 m by default** (`lulc_resolution = 30`, the MapBiomas grid): the continuous suitability is bilinearly resampled to that grid and combined with habitat. Larger values (e.g. `lulc_resolution = 250`) aggregate habitat into the fraction of habitat per cell. That runs faster, but it blurs habitat edges and fragmentation and **reduces the spatial accuracy of realized maps and areas**, and the function warns about it. ESA WorldCover (as distributed by `geodata`) is limited to ~1 km. At 30 m, large regions produce very large rasters: the grid size is reported before processing and all outputs are compressed GeoTIFFs.
 
 ## Main arguments of `cins_model()`
 
+See `?cins_model` for the complete list.
+
 | Argument | Default | Description |
 | :--- | :--- | :--- |
-| `species` | required | Scientific name. |
-| `life_form` | required | `"tree"`, `"shrub"`, `"grassland"`, `"liana"`, `"epiphyte"`. |
+| `species` | required | One or more scientific names. |
+| `life_form` | required | `"tree"`, `"shrub"`, `"grassland"`, `"liana"`, `"epiphyte"` (one per species or one for all). |
 | `savanna_habitat` | required with MapBiomas | Savanna Formation (class 4) as habitat (`TRUE`/`FALSE`). |
-| `occurrences` | `NULL` | User records (data frame / CSV); otherwise GBIF. |
-| `region` | `"auto"` | Calibration area: `"auto"`, continent, country, `"Country:State"`, polygon. |
-| `m_buffer_km` | `300` | Buffer for the automatic M. |
+| `occurrences` | `NULL` | User records (data frame / CSV; list for several species); otherwise GBIF. |
+| `region` / `m_buffer_km` | `"auto"` / `300` | Calibration area. |
 | `proj_region` | `NULL` | Region for spatial transfer. |
 | `host_species` / `host_life_form` | `NULL` / `"tree"` | Hosts (phorophytes) as biotic predictors. |
-| `future_scenario` / `future_year` | `NULL` / `2050` | One or more SSPs and years (2021–2100). |
-| `gcms` | `"default"` | ACCESS-CM2, IPSL-CM6A-LR, MIROC6, MPI-ESM1-2-HR, MRI-ESM2-0; or `"all"` or a vector. |
+| `future_scenario` / `future_year` | `NULL` / `2070` | One or more SSPs and years (2021–2100). |
+| `gcms` | `"default"` | 5 GCMs; `"all"` (26) or any vector from `list_gcms()`. |
+| `future_climate` | `NULL` | User climate (named list of rasters) for any other GCM or source. |
 | `resolution` | `5` | Climate resolution (arc-min): 10, 5, 2.5, 0.5. |
 | `soil_vars`, `soil_depth`, `topography` | `NULL`, `5`, `FALSE` | Optional static predictors. |
 | `lulc_source` | `"auto"` | `"auto"`, `"mapbiomas"`, `"esa"`, raster path/`SpatRaster`, or `NULL`. |
-| `lulc_year` | `2024` | MapBiomas year. |
-| `lulc_classes` | `NULL` | Override the classes derived from `life_form`. |
+| `mapbiomas_collection` / `lulc_year` | `11` / `2024` | MapBiomas collection and year. |
+| `lulc_classes` / `lulc_groups` | `NULL` | Override habitat classes / conflict-table groups. |
 | `lulc_resolution` | `30` | Cell size (m) of realized maps; coarser = less accurate. |
-| `habitat_fraction_min` | `0.5` | Minimum habitat fraction for coarse cells to be mapped as realized. |
+| `habitat_fraction_min` | `0.5` | Minimum habitat fraction for coarse cells. |
+| `mask_water` / `conflict_table` | `TRUE` / `TRUE` | Exclude water; land-use conflict table. |
 | `exclude_cultivated` / `native_only` | `TRUE` / `FALSE` | Record filters. |
 | `year_min` / `max_uncertainty_m` | `1970` / `10000` | Record filters. |
-| `thin_km` | `10` | Thinning distance. |
+| `cc_tests` | 7 tests | CoordinateCleaner tests. |
+| `thin_km` | `5` | Thinning distance. |
 | `alt_min` / `alt_max` | `NULL` | Elevation limits (m). |
+| `vif_cutoff` | `5` | VIF threshold (`NULL` to skip). |
+| `algorithms` | `c("rf", "maxnet", "glm")` | Any codes from `list_algorithms()`. |
+| `n_pseudo` / `n_pseudo_sets` / `bg_method` | `1000` / `3` / `"gRandom"` | Background points. |
+| `cv_method` / `replicates` / `test_percent` / `cv_folds` | `"sub"` / `3` / `20` / `5` | Partitioning. |
+| `ensemble_method` / `ensemble_stat` / `ensemble_min` | `"weighted"` / `"TSS"` / `0.5` | Ensemble. |
 | `binary_threshold` | `"maxTSS"` | Or `"sp=se"`, `"maxKappa"`, `"P10"`, … or a number in (0, 1). |
-| `vif_cutoff` | `10` | VIF threshold (`NULL` to skip). |
-| `n_pseudo` | `1000` | Background points. |
-| `algorithms` | `c("rf", "maxnet", "glm")` | Any of `rf`, `maxnet`, `maxent`, `brt`, `svm`, `mlp`, `mars`, `cart`, `glm`, `gam`, `mahal`, `bioclim`. |
-| `replicates` / `test_percent` | `1` / `30` | Sub-sampling replicates (≥ 5 recommended) and test share. |
+| `uncertainty` | `TRUE` | Coefficient-of-variation maps. |
+| `elevation_shift` / `dem` / `elevation_basis` | `TRUE` / `"worldclim"` / `"potential"` | Altitudinal shift of suitable areas. |
 | `seed` | `NULL` | Set for reproducible runs. |
 | `area_report` | `"none"` | `"total"`, `"continent"`, `"country"`, `"state"`. |
 | `output_dir` / `cache_dir` | `getwd()` / `cins_cache_dir()` | Outputs and persistent download cache. |
@@ -119,9 +187,9 @@ Realized maps are produced at **30 m by default** (`lulc_resolution = 30`, the M
 ## Outputs
 
 Files in `output_dir` (prefix = species name):
-`*_occurrences.csv`, `*_evaluation.csv`, `*_variable_importance.csv`, `*_native_suitability.tif`, `*_native_binary.tif`, `*_native_habitat.tif`, `*_native_lulc_stack.tif` (realized suitability, potential binary, realized binary and realized weight at 30 m), equivalent `*_projected_*` and `*_future_<ssp>_<year>_*` files, `*_area_<level>_<period>.csv`, and `*_settings.txt` (all settings and package versions).
+`*_occurrences.csv`, `*_evaluation.csv` (per model, background set and replicate, with `in_ensemble`), `*_variable_importance.csv`, `*_native_suitability.tif`, `*_native_binary.tif`, `*_native_uncertainty_cv.tif`, `*_native_habitat.tif`, `*_native_lulc_stack.tif` (realized suitability, potential binary, realized binary and realized weight at 30 m), `*_native_lulc_conflict.csv`, equivalent `*_projected_*` and `*_future_<ssp>_<year>_*` files, `*_area_<level>_<period>.csv`, `*_area_change.csv`, `*_elevation_shift.csv` and `*_settings.txt` (all settings and package versions). Several species: one sub-folder per species plus `species_summary.csv` and `richness_<period>_<potential|realized>.tif`.
 
-The returned `cins_model` object holds `occurrences`, `region`, `model`, `threshold`, `selected_vars`, `evaluation`, `var_importance`, `native`, `projected`, `future` (named `ssp_year`) and `settings`. Each of `native`, `projected` and `future[[i]]` contains `continuous`, `binary`, `realized_continuous`, `realized_binary`, `habitat` and `area_table`.
+The returned `cins_model` holds `occurrences`, `region`, `model`, `threshold`, `selected_vars`, `evaluation`, `var_importance`, `native`, `projected`, `future` (named `ssp_year`), `area_change`, `elevation` and `settings`. Each of `native`, `projected` and `future[[i]]` contains `continuous`, `binary`, `uncertainty`, `realized_continuous`, `realized_binary`, `habitat`, `area_table` and `conflict_table`. Several species return a `cins_multi` with `models`, `summary` and `richness`.
 
 ## Methodological notes
 
@@ -129,6 +197,7 @@ The returned `cins_model` object holds `occurrences`, `region`, `model`, `thresh
 * **Threshold.** maxTSS is the default because it performs well with presence-background data (Liu et al. 2013, 2016). For specialists, or when commission errors must be minimised, give a numeric threshold and inspect the continuous maps.
 * **Static land cover in futures.** Future realized maps combine future climate with the *current* land cover (`lulc_year`); they show climate-driven change within today's remaining habitat.
 * **Downscaling.** Resampling suitability to 30 m refines where habitat is delineated; it does not add climatic information beyond that of the climate grid.
+* **Altitudinal shift.** Shifts are measured on the continuous suitability resampled to the DEM grid, without a fixed altitudinal filter that would constrain future migration. A finer DEM can be supplied with `dem`.
 * **Boundaries.** Areas are computed on ~1 km blocks of the 30 m grid and each block is assigned to a single administrative unit (GADM 4.1) by its centre, which avoids double counting along borders.
 
 ## Migrating from 0.1.0
@@ -186,6 +255,13 @@ cins_references(algorithms = c("rf", "maxnet", "glm"))
 * Cortes, C. & Vapnik, V. (1995). Support-vector networks. *Machine Learning*, 20, 273–297. https://doi.org/10.1007/BF00994018
 * Friedman, J.H. (1991). Multivariate adaptive regression splines. *The Annals of Statistics*, 19, 1–67. https://doi.org/10.1214/aos/1176347963
 * Farber, O. & Kadmon, R. (2003). Assessment of alternative approaches for bioclimatic modeling with special emphasis on the Mahalanobis distance. *Ecological Modelling*, 160, 115–130. https://doi.org/10.1016/S0304-3800(02)00327-7
+* Bergmeir, C. & Benítez, J.M. (2012). Neural networks in R using the Stuttgart Neural Network Simulator: RSNNS. *Journal of Statistical Software*, 46(7). https://doi.org/10.18637/jss.v046.i07
+* Karatzoglou, A., Smola, A., Hornik, K. & Zeileis, A. (2004). kernlab – an S4 package for kernel methods in R. *Journal of Statistical Software*, 11(9). https://doi.org/10.18637/jss.v011.i09
+* Hastie, T., Tibshirani, R. & Buja, A. (1994). Flexible discriminant analysis by optimal scoring. *Journal of the American Statistical Association*, 89, 1255–1270. https://doi.org/10.1080/01621459.1994.10476866
+* Royle, J.A., Chandler, R.B., Yackulic, C. & Nichols, J.D. (2012). Likelihood analysis of species occurrence probability from presence-only data for modelling species distributions. *Methods in Ecology and Evolution*, 3, 545–554. https://doi.org/10.1111/j.2041-210X.2011.00182.x
+* Breiman, L., Friedman, J.H., Olshen, R.A. & Stone, C.J. (1984). *Classification and Regression Trees*. Wadsworth.
+* Busby, J.R. (1991). BIOCLIM – a bioclimate analysis and prediction system. In: Margules, C.R. & Austin, M.P. (eds) *Nature Conservation: Cost Effective Biological Surveys and Data Analysis*. CSIRO, 64–68.
+* Carpenter, G., Gillison, A.N. & Winter, J. (1993). DOMAIN: a flexible modelling procedure for mapping potential distributions of plants and animals. *Biodiversity and Conservation*, 2, 667–680. https://doi.org/10.1007/BF00051966
 
 ## License
 

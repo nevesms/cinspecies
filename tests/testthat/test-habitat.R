@@ -48,3 +48,31 @@ test_that("cells outside the region stay NA (not 0) in the habitat layer", {
   lu <- list(raster = r, type = "categorical", source = "mapbiomas", native_res_m = terra::res(r)[1] * 111320)
   expect_equal(terra::values(habitat_layer(lu, c(3L, 4L), lu$native_res_m))[, 1], c(1, NA, 0, 1))
 })
+
+test_that("water classes are excluded and conflict table sums to 100%", {
+  p <- make_predictors()
+  lu <- make_lulc(p)
+  v <- terra::values(lu$raster)[, 1]; v[seq(1, length(v), 7)] <- 33L
+  lu$raster <- terra::setValues(lu$raster, v)
+  h <- habitat_layer(lu, c(3L, 4L), lu$native_res_m, na_classes = c(26L, 31L, 33L))
+  expect_true(all(is.na(terra::values(h)[v == 33, 1])))
+  pb <- terra::ifel(terra::init(lu$raster, "y") > -25, 1, 0)
+  ct <- lulc_conflict_table(pb, lu, c(3L, 4L))
+  expect_false("Water" %in% ct$Category)
+  expect_equal(sum(ct$Area_pct), 100, tolerance = 0.05)
+  expect_equal(ct$Category[1], "Available habitat")
+})
+
+test_that("elevation shift and area change compute expected directions", {
+  r <- terra::rast(nrows = 20, ncols = 20, xmin = 0, xmax = 2, ymin = 0, ymax = 2, crs = "EPSG:4326")
+  y <- terra::crds(r, na.rm = FALSE)[, 2]
+  dem <- terra::setValues(r, y * 1000)
+  cur <- terra::setValues(r, as.numeric(y < 1))
+  fut <- terra::setValues(r, as.numeric(y > 1))
+  e <- suppressMessages(elevation_shift(list(current = cur, f = fut), 0.5, dem = dem))
+  expect_gt(e$Shift_m[2], 900)
+  ch <- suppressMessages(area_change_table(cur, list(f = fut), "total"))
+  expect_equal(ch$Net_change_f_pct, 0, tolerance = 1)
+  expect_gt(ch$Gain_f_km2, 0)
+  expect_equal(ch$Gain_f_km2, ch$Loss_f_km2, tolerance = 1)
+})

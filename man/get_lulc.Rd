@@ -8,6 +8,7 @@ get_lulc(
   lulc_source = "auto",
   region,
   year = 2024,
+  collection = 11,
   esa_vars = NULL,
   cache_dir = cins_cache_dir()
 )
@@ -17,7 +18,9 @@ get_lulc(
 
 \item{region}{\code{SpatVector} polygon (or region definition).}
 
-\item{year}{Integer. MapBiomas year (1985-2024 for Collection 10).}
+\item{year}{Integer. MapBiomas year.}
+
+\item{collection}{Integer. MapBiomas collection (11 or 10).}
 
 \item{esa_vars}{Character. ESA layers to sum (see \code{\link[=habitat_classes]{habitat_classes()}}).}
 
@@ -29,11 +32,13 @@ A list with \code{raster}, \code{type} (\code{"categorical"} or \code{"fraction"
 }
 \description{
 \itemize{
-\item \code{"mapbiomas"}: MapBiomas Brazil Collection 10 (30 m, 1985-2024). The
+\item \code{"mapbiomas"}: MapBiomas Brazil (30 m), Collection 11 (1985-2025) by
+default or Collection 10 (1985-2024) with \code{collection = 10}. The
 region window is read directly from the cloud-optimised GeoTIFF through
 GDAL \verb{/vsicurl/} (only the needed tiles are transferred) and cached; if
-that fails the whole annual map is downloaded. Another collection can be
-used with \code{options(cinspecies.mapbiomas_url = "<url with \%d for the year>")}.
+that fails the whole annual map is downloaded. If a Collection 11 map
+cannot be reached, Collection 10 is used with a warning. Any other source
+can be used with \code{options(cinspecies.mapbiomas_url = "<url with \%d for the year>")}.
 \item \code{"esa"}: ESA WorldCover 2021 fractional cover aggregated to 30 arc-s by
 \code{geodata::landcover()} (global).
 \item \code{"auto"}: MapBiomas if at least 95\% of the region is in Brazil, ESA otherwise.

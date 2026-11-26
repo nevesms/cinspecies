@@ -111,6 +111,8 @@
 #'   cultivated records.
 #' @param native_only Logical. Also remove records flagged as introduced,
 #'   invasive or naturalised.
+#' @param cc_tests Character. CoordinateCleaner tests (see
+#'   `CoordinateCleaner::clean_coordinates()`), e.g. add `"outliers"` or `"urban"`.
 #' @param thin_km Numeric. Minimum distance (km) between records.
 #' @param alt_min,alt_max Numeric or `NULL`. Elevation limits (m a.s.l.).
 #' @param seed Integer or `NULL`. Random seed for the thinning step.
@@ -134,7 +136,8 @@
 get_occurrences <- function(species, occurrences = NULL, clean = TRUE, gbif_limit = 20000,
                             year_min = 1970, max_uncertainty_m = 10000,
                             exclude_cultivated = TRUE, native_only = FALSE,
-                            thin_km = 10, alt_min = NULL, alt_max = NULL, seed = NULL,
+                            cc_tests = c("capitals", "centroids", "equal", "gbif", "institutions", "seas", "zeros"),
+                            thin_km = 5, alt_min = NULL, alt_max = NULL, seed = NULL,
                             cache_dir = cins_cache_dir()) {
 
   if (!is.null(occurrences)) {
@@ -151,7 +154,7 @@ get_occurrences <- function(species, occurrences = NULL, clean = TRUE, gbif_limi
     .msg("Occurrences", "Cleaning coordinates with CoordinateCleaner (", nrow(pts), " records)...")
     pts <- CoordinateCleaner::clean_coordinates(
       x = pts, lon = "decimalLongitude", lat = "decimalLatitude", species = "species",
-      tests = c("capitals", "centroids", "equal", "gbif", "institutions", "seas", "zeros"),
+      tests = cc_tests,
       value = "clean", verbose = FALSE
     )
   }

@@ -13,6 +13,8 @@ project_niche(
   gcms = "default",
   static_layers = NULL,
   biotic_layers = NULL,
+  new_climate = NULL,
+  uncertainty = FALSE,
   output_dir = getwd(),
   species_name = "Species",
   tag = "projected",
@@ -35,6 +37,14 @@ project_niche(
 \item{static_layers}{\code{SpatRaster} of static predictors for the target region, or \code{NULL}.}
 
 \item{biotic_layers}{\code{SpatRaster} of host layers for the target region/scenario, or \code{NULL}.}
+
+\item{new_climate}{Optional user climate for the target (a \code{SpatRaster}, a
+file path, or a list of them - e.g. several GCMs from any source - which
+are averaged cell by cell). Layer names must match the calibration
+variables (\code{bio1} ... \code{bio19}; 19-layer stacks are renamed automatically).
+When given, nothing is downloaded.}
+
+\item{uncertainty}{Logical. Also write the coefficient-of-variation map.}
 
 \item{output_dir, species_name, tag}{Output location and file naming.}
 

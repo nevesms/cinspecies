@@ -4,7 +4,11 @@
 \alias{model_threshold}
 \title{Compute the binary threshold of the ensemble}
 \usage{
-model_threshold(model, binary_threshold = "maxTSS")
+model_threshold(
+  model,
+  binary_threshold = "maxTSS",
+  ensemble_setting = list(method = "weighted", stat = "TSS", opt = 2)
+)
 }
 \arguments{
 \item{model}{\code{sdmModels} object.}
@@ -12,6 +16,8 @@ model_threshold(model, binary_threshold = "maxTSS")
 \item{binary_threshold}{\code{"maxTSS"} (default), another criterion
 (\code{"sp=se"}, \code{"maxKappa"}, \code{"minROCdist"}, \code{"P10"}, \code{"P5"}, \code{"maxMCC"},
 \code{"prevalence"}), or a number between 0 and 1.}
+
+\item{ensemble_setting}{List passed to \code{sdm::ensemble()} (see \code{\link[=fit_models]{fit_models()}}).}
 }
 \value{
 Numeric threshold, with attribute \code{"method"}.

@@ -31,6 +31,7 @@ Imports:
     CoordinateCleaner,
     geodata (>= 0.6-2),
     graphics,
+    methods,
     rgbif (>= 3.7.0),
     spThin,
     stats,
@@ -40,17 +41,19 @@ Imports:
     utils
 Suggests:
     dismo,
-    e1071,
     earth,
     gbm,
     glmnet,
+    kernlab,
     maxnet,
+    mda,
     mgcv,
-    nnet,
     randomForest,
+    rJava,
     rpart,
     RSNNS,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    tree
 Config/testthat/edition: 3
 URL: https://github.com/nevesms/cinspecies
 BugReports: https://github.com/nevesms/cinspecies/issues

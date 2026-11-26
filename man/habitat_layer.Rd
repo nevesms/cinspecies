@@ -4,7 +4,13 @@
 \alias{habitat_layer}
 \title{Habitat layer at the requested resolution}
 \usage{
-habitat_layer(lulc, classes = NULL, resolution_m = 30, filename = "")
+habitat_layer(
+  lulc,
+  classes = NULL,
+  resolution_m = 30,
+  na_classes = NULL,
+  filename = ""
+)
 }
 \arguments{
 \item{lulc}{Output of \code{\link[=get_lulc]{get_lulc()}}.}
@@ -14,10 +20,13 @@ habitat_layer(lulc, classes = NULL, resolution_m = 30, filename = "")
 \item{resolution_m}{Numeric. Target cell size in metres (default 30, the
 MapBiomas native resolution).}
 
+\item{na_classes}{Integer classes set to \code{NA} (excluded from the study
+area), e.g. water bodies (MapBiomas 26, 31, 33).}
+
 \item{filename}{Optional output file.}
 }
 \value{
-\code{SpatRaster} with values 0-1.
+\code{SpatRaster} with values 0-1 (\code{NA} outside the region and in \code{na_classes}).
 }
 \description{
 Converts land cover into habitat: 1/0 at the native resolution of a

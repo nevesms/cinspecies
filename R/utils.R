@@ -105,17 +105,69 @@ cins_cache_dir <- function(create = TRUE) {
   invisible(TRUE)
 }
 
-#' Map an algorithm code to the package it needs (for early, readable errors)
+#' Algorithms available through sdm (code -> category, package)
 #' @noRd
-.algorithm_pkgs <- c(rf = "randomForest", maxnet = "maxnet", maxent = "dismo", brt = "gbm",
-                     gbm = "gbm", svm = "e1071", mlp = "RSNNS", nnet = "nnet", mars = "earth",
-                     cart = "rpart", glm = "stats", gam = "mgcv", mahal = "stats", bioclim = "stats")
+.algorithms <- data.frame(
+  code = c("rf", "brt", "gbm", "svm", "cart", "rpart", "mars", "fda", "mda",
+           "mlp", "rbf",
+           "maxnet", "maxent", "maxlike",
+           "glm", "glmpoly", "glmnet", "gam",
+           "bioclim", "bioclim.dismo", "domain.dismo", "mahal.dismo"),
+  name = c("Random Forest", "Boosted Regression Trees", "Boosted Regression Trees",
+           "Support Vector Machine", "Classification and Regression Tree", "Recursive Partitioning Tree",
+           "Multivariate Adaptive Regression Splines", "Flexible Discriminant Analysis",
+           "Mixture Discriminant Analysis",
+           "Multi-Layer Perceptron", "Radial Basis Function network",
+           "Maxent (maxnet)", "Maxent (Java)", "MaxLike",
+           "Generalized Linear Model", "Polynomial GLM", "Elastic-net GLM", "Generalized Additive Model",
+           "BIOCLIM", "BIOCLIM (dismo)", "DOMAIN (dismo)", "Mahalanobis distance (dismo)"),
+  category = c(rep("Machine learning", 9), rep("Neural network", 2), rep("Maximum entropy / likelihood", 3),
+               rep("Regression", 4), rep("Envelope / distance", 4)),
+  package = c("randomForest", "gbm", "gbm", "kernlab", "tree", "rpart", "earth", "mda", "mda",
+              "RSNNS", "RSNNS", "maxnet", "dismo", "stats", "stats", "stats", "glmnet", "mgcv",
+              "stats", "dismo", "dismo", "dismo"),
+  stringsAsFactors = FALSE
+)
+
+#' Modelling algorithms available in cinspecies
+#'
+#' Lists the algorithms that can be passed to `algorithms` in [cins_model()]
+#' and [fit_models()] (all methods implemented in `sdm`): machine learning,
+#' neural networks, maximum entropy, regression and envelope/distance methods,
+#' the package each requires and whether it is installed. Any combination can
+#' be used in the ensemble. Install missing packages with `install.packages()`
+#' or `sdm::installAll()`.
+#'
+#' @param category Optional filter, e.g. `"Neural network"`.
+#' @return Data frame with `code`, `name`, `category`, `package`, `installed`.
+#' @examples
+#' list_algorithms()
+#' list_algorithms("Neural network")
+#' @export
+list_algorithms <- function(category = NULL) {
+  a <- .algorithms
+  if (!is.null(category)) a <- a[tolower(a$category) %in% tolower(category), ]
+  a$installed <- vapply(a$package, requireNamespace, logical(1), quietly = TRUE)
+  rownames(a) <- NULL
+  a
+}
+
+#' CMIP6 GCMs available from WorldClim 2.1
+#'
+#' @return Character vector of GCM names accepted by `gcms`.
+#' @examples
+#' list_gcms()
+#' @export
+list_gcms <- function() .valid_gcms
 
 #' @noRd
 .check_algorithms <- function(algorithms) {
-  unknown <- setdiff(algorithms, names(.algorithm_pkgs))
-  if (length(unknown) > 0) stop("Unknown algorithm(s): ", paste(unknown, collapse = ", "), call. = FALSE)
-  pk <- unique(.algorithm_pkgs[algorithms])
+  unknown <- setdiff(algorithms, .algorithms$code)
+  if (length(unknown) > 0) {
+    stop("Unknown algorithm(s): ", paste(unknown, collapse = ", "), ". See list_algorithms().", call. = FALSE)
+  }
+  pk <- unique(.algorithms$package[match(algorithms, .algorithms$code)])
+  if ("maxent" %in% algorithms) pk <- c(pk, "rJava")
   miss <- pk[!vapply(pk, requireNamespace, logical(1), quietly = TRUE)]
   if (length(miss) > 0) {
     stop("Algorithm package(s) not installed: ", paste(miss, collapse = ", "),
@@ -123,3 +175,6 @@ cins_cache_dir <- function(create = TRUE) {
   }
   invisible(TRUE)
 }
+
+#' @noRd
+.algorithm_package <- function(algorithms) unique(.algorithms$package[match(algorithms, .algorithms$code)])

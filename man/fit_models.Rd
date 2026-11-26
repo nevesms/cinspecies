@@ -9,8 +9,16 @@ fit_models(
   predictors,
   algorithms = c("rf", "maxnet", "glm"),
   n_pseudo = 1000,
+  n_pseudo_sets = 1,
+  bg_method = "gRandom",
+  cv_method = "sub",
   replicates = 1,
   test_percent = 30,
+  cv_folds = 5,
+  ensemble_method = "weighted",
+  ensemble_stat = "TSS",
+  ensemble_min = NULL,
+  uncertainty = TRUE,
   ncores = 1,
   binary_threshold = "maxTSS",
   seed = NULL,
@@ -23,13 +31,26 @@ fit_models(
 
 \item{predictors}{\code{SpatRaster} of predictors for the calibration area.}
 
-\item{algorithms}{Character. sdm method codes (see README).}
+\item{algorithms}{Character. Any code from \code{\link[=list_algorithms]{list_algorithms()}}.}
 
-\item{n_pseudo}{Numeric. Number of background points.}
+\item{n_pseudo}{Numeric. Background points per set.}
 
-\item{replicates}{Numeric. Sub-sampling replicates per algorithm (>= 5 recommended).}
+\item{n_pseudo_sets}{Numeric. Number of independent background sets.}
 
-\item{test_percent}{Numeric. Percentage of records held out for testing.}
+\item{bg_method}{\code{"gRandom"} (geographic random, default) or \code{"eRandom"}
+(environmentally stratified random).}
+
+\item{cv_method}{\code{"sub"} (random sub-sampling), \code{"cv"} (k-fold) or \code{"boot"}.}
+
+\item{replicates}{Numeric. Repetitions of the partitioning per algorithm and set.}
+
+\item{test_percent}{Numeric. Percentage held out (sub-sampling/bootstrap).}
+
+\item{cv_folds}{Numeric. Folds for \code{cv_method = "cv"}.}
+
+\item{ensemble_method, ensemble_stat, ensemble_min}{See \code{\link[=ensemble_setting]{ensemble_setting()}}.}
+
+\item{uncertainty}{Logical. Produce the coefficient-of-variation map.}
 
 \item{ncores}{Numeric. CPU cores.}
 
@@ -42,15 +63,19 @@ fit_models(
 \item{species_name}{File prefix.}
 }
 \value{
-List with \code{model}, \code{ensemble_map}, \code{binary_map}, \code{threshold},
-\code{selected_vars}, \code{evaluation}, \code{var_importance}.
+List with \code{model}, \code{ensemble_map}, \code{binary_map}, \code{uncertainty_map},
+\code{threshold}, \code{ensemble_setting}, \code{selected_vars}, \code{evaluation},
+\code{var_importance}.
 }
 \description{
-Builds presence-background data (random background within the calibration
-area; Barbet-Massin et al. 2012), fits the selected algorithms with \code{sdm}
-using random sub-sampling cross-validation, and predicts a TSS-weighted
-ensemble (Araujo & New 2007). Model evaluation (AUC, TSS, Kappa, COR,
-threshold) and variable importance are returned as tables.
+Builds presence-background data (one or more independent sets of random
+background points within the calibration area; Barbet-Massin et al. 2012),
+fits the selected algorithms with \code{sdm} using sub-sampling, k-fold
+cross-validation or bootstrapping, and predicts an ensemble (TSS-weighted by
+default, optionally restricted to models with TSS >= \code{ensemble_min};
+Araujo & New 2007). Evaluation (AUC, TSS, Kappa, COR, sensitivity,
+specificity, threshold) per model, variable importance and an uncertainty
+map (coefficient of variation among models) are produced.
 }
 \references{
 Naimi, B. & Araujo, M.B. (2016). sdm: a reproducible and extensible R

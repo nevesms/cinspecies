@@ -20,3 +20,13 @@ test_that("deprecated cins_pipeline forwards and rejects marine", {
   expect_error(suppressWarnings(cins_pipeline("x", ecosystem = "marine")), "Marine")
   expect_error(suppressWarnings(cins_pipeline("x")), "life_form")
 })
+
+test_that("algorithm catalogue covers neural networks, ML, regression and envelopes", {
+  a <- list_algorithms()
+  expect_true(all(c("Machine learning", "Neural network", "Regression", "Envelope / distance") %in% a$category))
+  expect_true(all(c("mlp", "rbf", "rf", "brt", "svm", "maxnet", "gam") %in% a$code))
+  expect_error(cinspecies:::.check_algorithms("nnet"), "Unknown")
+  expect_length(list_gcms(), 26)
+  st <- ensemble_setting(ensemble_min = 0.5)
+  expect_equal(st$expr, "TSS >= 0.5")
+})

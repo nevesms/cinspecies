@@ -2,7 +2,7 @@
 % Please edit documentation in R/cins_model.R
 \name{cins_model}
 \alias{cins_model}
-\title{Niche and realized-habitat model of a terrestrial plant species}
+\title{Niche and realized-habitat model of terrestrial plant species}
 \usage{
 cins_model(
   species,
@@ -14,32 +14,49 @@ cins_model(
   host_species = NULL,
   host_life_form = "tree",
   future_scenario = NULL,
-  future_year = 2050,
+  future_year = 2070,
   gcms = "default",
+  future_climate = NULL,
   resolution = 5,
   soil_vars = NULL,
   soil_depth = 5,
   topography = FALSE,
   lulc_source = "auto",
   lulc_year = 2024,
+  mapbiomas_collection = 11,
   lulc_classes = NULL,
   savanna_habitat = NULL,
   lulc_resolution = 30,
   habitat_fraction_min = 0.5,
+  mask_water = TRUE,
+  conflict_table = TRUE,
+  lulc_groups = NULL,
   exclude_cultivated = TRUE,
   native_only = FALSE,
   year_min = 1970,
   max_uncertainty_m = 10000,
   gbif_limit = 20000,
-  thin_km = 10,
+  cc_tests = c("capitals", "centroids", "equal", "gbif", "institutions", "seas", "zeros"),
+  thin_km = 5,
   alt_min = NULL,
   alt_max = NULL,
   binary_threshold = "maxTSS",
-  vif_cutoff = 10,
-  n_pseudo = 1000,
+  vif_cutoff = 5,
   algorithms = c("rf", "maxnet", "glm"),
-  replicates = 1,
-  test_percent = 30,
+  n_pseudo = 1000,
+  n_pseudo_sets = 3,
+  bg_method = "gRandom",
+  cv_method = "sub",
+  replicates = 3,
+  test_percent = 20,
+  cv_folds = 5,
+  ensemble_method = "weighted",
+  ensemble_stat = "TSS",
+  ensemble_min = 0.5,
+  uncertainty = TRUE,
+  elevation_shift = TRUE,
+  dem = "worldclim",
+  elevation_basis = "potential",
   ncores = 1,
   seed = NULL,
   area_report = "none",
@@ -49,138 +66,165 @@ cins_model(
 )
 }
 \arguments{
-\item{species}{Character. Scientific name.}
+\item{species}{Character. One or more scientific names.}
 
 \item{life_form}{Character (required). \code{"tree"}, \code{"shrub"}, \code{"grassland"},
-\code{"liana"} or \code{"epiphyte"}. Defines the land-cover classes used as habitat.}
+\code{"liana"} or \code{"epiphyte"} (one per species, or one for all).}
 
-\item{occurrences}{Optional user records (data frame, \code{SpatVector} or CSV
-path). If \code{NULL}, GBIF is queried. Supplying the records used in a previous
-study makes results reproducible (GBIF content changes over time).}
+\item{occurrences}{Optional user records (data frame, \code{SpatVector}, CSV path;
+a list for several species).}
 
-\item{region}{Calibration area: \code{"auto"} (default, from the records),
-a continent, country, \code{"Country:State"} vector, \code{SpatVector}, \code{sf} or file path.}
+\item{region}{Calibration area: \code{"auto"}, continent, country,
+\code{"Country:State"} vector, \code{SpatVector}, \code{sf} or file path.}
 
 \item{m_buffer_km}{Numeric. Buffer (km) for \code{region = "auto"}.}
 
-\item{proj_region}{Optional region to transfer the model to (same formats as \code{region}).}
+\item{proj_region}{Optional region to transfer the model to.}
 
-\item{host_species}{Optional character vector of host / phorophyte species.}
+\item{host_species}{Optional host / phorophyte species (character; a list for several species).}
 
-\item{host_life_form}{Life form of the hosts (default \code{"tree"}).}
+\item{host_life_form}{Life form of the hosts.}
 
-\item{future_scenario}{\code{NULL} or one or more of \code{"ssp126"}, \code{"ssp245"},
-\code{"ssp370"}, \code{"ssp585"}.}
+\item{future_scenario}{\code{NULL} or SSP codes (\code{"ssp126"}, \code{"ssp245"}, \code{"ssp370"}, \code{"ssp585"}).}
 
-\item{future_year}{One or more years (2021-2100); every scenario x year
-combination is projected.}
+\item{future_year}{One or more years (2021-2100).}
 
-\item{gcms}{GCMs to average: \code{"default"} (5 models), \code{"all"} or a vector.}
+\item{gcms}{\code{"default"} (5 GCMs), \code{"all"} (26 GCMs) or a vector from \code{\link[=list_gcms]{list_gcms()}}.}
 
-\item{resolution}{Climate resolution in arc-minutes: 10, 5, 2.5 or 0.5.}
+\item{future_climate}{Optional named list of user climate for any GCM or
+source not distributed by WorldClim: each element (named e.g.
+\code{"ssp245_2070"}) is a \code{SpatRaster}, file path, or list of them (averaged).
+Used instead of \code{future_scenario}/\code{gcms}.}
 
-\item{soil_vars}{\code{NULL} or SoilGrids variables (e.g. \code{c("clay", "sand", "phh2o", "soc")}).}
+\item{resolution}{Climate resolution (arc-min): 10, 5, 2.5 or 0.5.}
 
-\item{soil_depth}{SoilGrids depth interval (see \code{\link[=get_static_predictors]{get_static_predictors()}}).}
+\item{soil_vars, soil_depth, topography}{Static predictors (see \code{\link[=get_static_predictors]{get_static_predictors()}}).}
 
-\item{topography}{Logical. Add elevation and slope as predictors.}
+\item{lulc_source}{\code{"auto"}, \code{"mapbiomas"}, \code{"esa"}, raster path/\code{SpatRaster}, or \code{NULL}.}
 
-\item{lulc_source}{\code{"auto"} (MapBiomas in Brazil, ESA elsewhere),
-\code{"mapbiomas"}, \code{"esa"}, a raster path, a \code{SpatRaster}, or \code{NULL} (no LULC step).}
+\item{lulc_year}{Integer. MapBiomas year.}
 
-\item{lulc_year}{Integer. MapBiomas year (Collection 10: 1985-2024).}
+\item{mapbiomas_collection}{Integer. 11 (default) or 10.}
 
-\item{lulc_classes}{Optional integer classes overriding those derived from \code{life_form}.}
+\item{lulc_classes}{Optional habitat classes overriding \code{life_form}.}
 
-\item{savanna_habitat}{Logical. Should MapBiomas Savanna Formation (4) count
-as habitat? \strong{Required} whenever MapBiomas classes are derived from
-\code{life_form} (no default, by design).}
+\item{savanna_habitat}{Logical, required with MapBiomas: Savanna Formation (4) as habitat?}
 
-\item{lulc_resolution}{Numeric. Cell size (m) of realized-habitat maps.
-Default 30 m (MapBiomas native). Larger values aggregate habitat into
-fractions and reduce spatial accuracy (a warning is issued). ESA
-WorldCover via \code{geodata} is limited to ~1 km.}
+\item{lulc_resolution}{Numeric. Cell size (m) of realized maps (default 30;
+coarser values reduce accuracy and trigger a warning).}
 
-\item{habitat_fraction_min}{Numeric. Minimum habitat fraction of a coarse
-cell to be mapped as realized (only when \code{lulc_resolution} > native).}
+\item{habitat_fraction_min}{Numeric. Minimum habitat fraction of coarse cells.}
 
-\item{exclude_cultivated, native_only, year_min, max_uncertainty_m, gbif_limit, thin_km, alt_min, alt_max}{Record filters, see \code{\link[=get_occurrences]{get_occurrences()}}.}
+\item{mask_water}{Logical. Exclude water bodies from areas and tables.}
 
-\item{binary_threshold}{\code{"maxTSS"} (default) or another criterion or a
-number in (0, 1) (see \code{\link[=model_threshold]{model_threshold()}}).}
+\item{conflict_table}{Logical. Land-use conflict table per period.}
 
-\item{vif_cutoff}{Numeric or \code{NULL}. VIF threshold.}
+\item{lulc_groups}{Optional named list grouping LULC classes (default \code{\link[=mapbiomas_groups]{mapbiomas_groups()}}).}
 
-\item{n_pseudo}{Numeric. Number of background points.}
+\item{exclude_cultivated, native_only, year_min, max_uncertainty_m, gbif_limit, cc_tests, thin_km, alt_min, alt_max}{Record filters (see \code{\link[=get_occurrences]{get_occurrences()}}).}
 
-\item{algorithms}{Character. sdm algorithms (see README).}
+\item{binary_threshold}{\code{"maxTSS"} (default), another criterion or a number in (0, 1).}
 
-\item{replicates, test_percent}{Cross-validation settings.}
+\item{vif_cutoff}{Numeric or \code{NULL}.}
+
+\item{algorithms}{Character. Codes from \code{\link[=list_algorithms]{list_algorithms()}}.}
+
+\item{n_pseudo, n_pseudo_sets, bg_method}{Background settings.}
+
+\item{cv_method, replicates, test_percent, cv_folds}{Partitioning settings.}
+
+\item{ensemble_method, ensemble_stat, ensemble_min}{Ensemble settings (see \code{\link[=ensemble_setting]{ensemble_setting()}}).}
+
+\item{uncertainty}{Logical. Coefficient-of-variation maps.}
+
+\item{elevation_shift}{Logical. Altitudinal-shift table (with futures).}
+
+\item{dem}{DEM for \code{elevation_shift} (\code{"worldclim"}, path or \code{SpatRaster}).}
+
+\item{elevation_basis}{\code{"potential"} or \code{"realized"}.}
 
 \item{ncores}{Numeric. CPU cores.}
 
-\item{seed}{Integer or \code{NULL}. Seed for thinning, VIF sampling, background
-and data partitioning (set it for reproducible runs).}
+\item{seed}{Integer or \code{NULL}.}
 
 \item{area_report}{\code{"none"}, \code{"total"}, \code{"continent"}, \code{"country"} or \code{"state"}.}
 
-\item{plot_results}{Logical. Plot the main maps.}
+\item{plot_results}{Logical.}
 
 \item{output_dir}{Directory for outputs.}
 
-\item{cache_dir}{Directory for downloaded data (\code{\link[=cins_cache_dir]{cins_cache_dir()}}).}
+\item{cache_dir}{Directory for downloaded data.}
 }
 \value{
-An object of class \code{cins_model} (a list) with \code{occurrences},
-\code{region}, \code{model}, \code{threshold}, \code{selected_vars}, \code{evaluation},
-\code{var_importance}, \code{native}, \code{projected}, \code{future} (named by
-\code{ssp_year}) and \code{settings}. Each of \code{native}, \code{projected} and the elements
-of \code{future} contains \code{continuous}, \code{binary}, \code{realized_continuous},
-\code{realized_binary}, \code{habitat} and \code{area_table}.
+A \code{cins_model} object (one species) or a \code{cins_multi} object
+(several species). A \code{cins_model} contains \code{occurrences}, \code{region},
+\code{model}, \code{threshold}, \code{selected_vars}, \code{evaluation}, \code{var_importance},
+\code{native}, \code{projected}, \code{future}, \code{area_change}, \code{elevation} and
+\code{settings}; \code{native}, \code{projected} and each \code{future[[i]]} contain
+\code{continuous}, \code{binary}, \code{uncertainty}, \code{realized_continuous},
+\code{realized_binary}, \code{habitat}, \code{area_table} and \code{conflict_table}.
 }
 \description{
-\code{cins_model()} runs the whole cinspecies workflow for trees, shrubs,
-natural-grassland species, lianas and epiphytes:
+\code{cins_model()} runs the whole cinspecies workflow for one or several
+species of trees, shrubs, natural-grassland species, lianas and epiphytes.
+Defaults reproduce a published workflow (VIF < 5, three background sets,
+three 80/20 sub-sampling repetitions, TSS-weighted ensemble of models with
+TSS >= 0.5, maxTSS threshold, climate downscaled to the 30 m MapBiomas grid,
+water masked, land-use conflict table and altitudinal shift), and every
+step can be changed through the arguments below.
 }
 \details{
 \enumerate{
 \item \strong{Records} - GBIF (or user) records; kingdom Plantae check; removal of
 fossil, cultivated/living-collection and managed records; temporal and
 positional-uncertainty filters; CoordinateCleaner; optional elevation
-filter; spatial thinning (\code{\link[=get_occurrences]{get_occurrences()}}). Records in forest
-plantations (MapBiomas class 9) are also removed.
-\item \strong{Calibration area (M)} - automatic (convex hull + buffer,
-\code{\link[=define_calibration_area]{define_calibration_area()}}) or user-defined (\code{\link[=get_region_polygon]{get_region_polygon()}}).
-\item \strong{Predictors} - WorldClim 2.1 bioclimatic variables, optional SoilGrids
-soil properties and topography, stepwise VIF (\code{\link[=select_predictors]{select_predictors()}}).
-\item \strong{Host species} (lianas, epiphytes, hemiparasites ...) - each host is
-modelled first and its suitability x habitat on the climate grid enters
-as a biotic predictor.
-\item \strong{Ensemble model} - multiple algorithms with \code{sdm}, TSS-weighted
-ensemble, binary map with the maxTSS threshold by default (\code{\link[=fit_models]{fit_models()}}).
-\item \strong{Land use and land cover} - the suitability map is downscaled to
-30 m (default) and combined with native habitat from MapBiomas (Brazil)
-or ESA WorldCover, chosen from \code{life_form} (\code{\link[=habitat_classes]{habitat_classes()}},
-\code{\link[=apply_lulc_mask]{apply_lulc_mask()}}).
-\item \strong{Transfer} to another region and to CMIP6 futures (several SSPs,
-years and GCMs) (\code{\link[=project_niche]{project_niche()}}).
-\item \strong{Geodetic area reports} of potential and realized habitat and habitat
-loss per continent, country or state (\code{\link[=calculate_area_report]{calculate_area_report()}}).
+filter; spatial thinning (\code{\link[=get_occurrences]{get_occurrences()}}); records in forest
+plantations (MapBiomas class 9) removed.
+\item \strong{Calibration area (M)} - automatic (\code{\link[=define_calibration_area]{define_calibration_area()}}) or
+user-defined (\code{\link[=get_region_polygon]{get_region_polygon()}}).
+\item \strong{Predictors} - WorldClim 2.1, optional SoilGrids and topography,
+stepwise VIF (\code{\link[=select_predictors]{select_predictors()}}).
+\item \strong{Host species} - modelled first; suitability x habitat enters as a
+biotic predictor (epiphytes, lianas, dependent species).
+\item \strong{Ensemble} - any algorithms of \code{\link[=list_algorithms]{list_algorithms()}} (machine learning,
+neural networks, maximum entropy, regression, envelopes), several
+background sets and partitions, ensemble with optional performance
+filter and uncertainty map (\code{\link[=fit_models]{fit_models()}}).
+\item \strong{Land use and land cover} - suitability downscaled to 30 m and combined
+with native habitat chosen from \code{life_form} (\code{\link[=habitat_classes]{habitat_classes()}},
+\code{\link[=apply_lulc_mask]{apply_lulc_mask()}}); land-use conflict table (\code{\link[=lulc_conflict_table]{lulc_conflict_table()}}).
+\item \strong{Transfer} to another region and to CMIP6 futures (any WorldClim GCM,
+or user climate through \code{future_climate}) (\code{\link[=project_niche]{project_niche()}}).
+\item \strong{Reports} - areas per unit (\code{\link[=calculate_area_report]{calculate_area_report()}}), net change,
+gains and losses (\code{\link[=area_change_table]{area_change_table()}}) and altitudinal shift
+(\code{\link[=elevation_shift]{elevation_shift()}}).
 }
 
-All rasters (GeoTIFF), tables (CSV) and a settings file are written to
-\code{output_dir}. Run \code{\link[=cins_references]{cins_references()}} for the full list of references to
-cite for each step.
+\strong{Several species.} If \code{species} has more than one name, each species is
+modelled in its own sub-folder and a \code{cins_multi} object is returned with a
+summary table and richness maps (sum of binary maps). \code{life_form} and
+\code{savanna_habitat} may be vectors with one value per species; \code{occurrences},
+\code{host_species} and \code{lulc_classes} may be lists with one element per species
+(named by species or in the same order). A single value applies to all.
 }
 \examples{
 \dontrun{
 m <- cins_model(
-  species = "Araucaria angustifolia", life_form = "tree",
-  savanna_habitat = FALSE, region = "auto",
-  future_scenario = c("ssp245", "ssp585"), future_year = 2050,
-  area_report = "state", replicates = 5, seed = 42
+  species = "Ilex paraguariensis", life_form = "tree", savanna_habitat = TRUE,
+  region = c("Brazil", "Argentina", "Paraguay", "Uruguay"),
+  proj_region = c("Brazil:Parana", "Brazil:Santa Catarina", "Brazil:Rio Grande do Sul"),
+  future_scenario = c("ssp245", "ssp585"), future_year = 2070,
+  gcms = c("MIROC6", "IPSL-CM6A-LR", "MRI-ESM2-0"),
+  algorithms = c("rf", "maxnet", "glm", "mlp"), area_report = "state", seed = 42
 )
-m
+m$native$conflict_table
+m$area_change
+m$elevation
+
+# several species at once
+mm <- cins_model(c("Araucaria angustifolia", "Ocotea porosa"), life_form = "tree",
+                 savanna_habitat = FALSE, region = "auto")
+mm$summary
 }
 }
 \references{

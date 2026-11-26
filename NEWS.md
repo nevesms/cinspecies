@@ -1,5 +1,18 @@
 # cinspecies 0.2.0
 
+## Complete workflow, user options, algorithms and several species
+
+* Defaults now reproduce a complete workflow: VIF < 5, 3 background sets (`n_pseudo_sets`), 3 random 80/20 partitions (`replicates`, `test_percent`), ensemble of models with TSS >= 0.5 (`ensemble_min`), maxTSS threshold, 5 km thinning, projections for 2070.
+* New partitioning (`cv_method = "sub"`, `"cv"`, `"boot"`, `cv_folds`), background (`bg_method = "eRandom"`) and ensemble options (`ensemble_method`, `ensemble_stat`, `ensemble_setting()`).
+* Uncertainty maps: coefficient of variation among models (`uncertainty`), also for projections.
+* 22 algorithms: machine learning, neural networks (`mlp`, `rbf`), maximum entropy/likelihood, regression and envelope methods; `list_algorithms()` shows categories and installation status. A single fitted model is handled without ensemble.
+* All 26 WorldClim CMIP6 GCMs (`list_gcms()`), plus climate from any source through `future_climate`.
+* Several species in one call (`species` vector, per-species `life_form`, `savanna_habitat`, `occurrences`, `host_species`, `lulc_classes`), returning a `cins_multi` object with a summary table and richness maps (`combine_species()`).
+* Land-use conflict table of classes inside the suitable area (`lulc_conflict_table()`, `mapbiomas_groups()`, `lulc_groups`), water masked from areas (`mask_water`).
+* Net change, gains and losses per unit (`area_change_table()`), altitudinal shift of suitable areas (`elevation_shift()`, user DEM via `dem`).
+* MapBiomas Collection 11 by default (`mapbiomas_collection`), with fallback to Collection 10.
+* CoordinateCleaner tests selectable (`cc_tests`).
+
 ## Focus: terrestrial plants (forest and natural-grassland species)
 
 * New main function `cins_model()`; `cins_pipeline()` is deprecated and forwards to it.
