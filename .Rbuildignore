@@ -1,5 +1,7 @@
 ^cinspecies\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^NEWS\.md$
+^README\.md$
+^inst/scripts/.*\.csv$
 \.tif$
-\.csv$
