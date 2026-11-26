@@ -51,7 +51,7 @@ The defaults follow a complete, published-style workflow, and every step can be 
 | Ensemble | TSS-weighted mean of models with TSS >= 0.5 | `ensemble_method`, `ensemble_stat`, `ensemble_min = NULL` |
 | Threshold | maxTSS on the ensemble | `binary_threshold = 0.6`, `"sp=se"`, `"P10"`, ... |
 | Uncertainty | coefficient of variation among models | `uncertainty = FALSE` |
-| Land cover | MapBiomas Collection 11 at 30 m, water masked | `mapbiomas_collection`, `lulc_year`, `lulc_resolution`, `mask_water`, `lulc_classes`, `lulc_groups` |
+| Land cover | MapBiomas Collection 11, most recent year (2025), at 30 m, water masked | `mapbiomas_collection`, `lulc_year`, `lulc_resolution`, `mask_water`, `lulc_classes`, `lulc_groups` |
 | Conflict table | land-use classes inside the suitable area | `conflict_table = FALSE` |
 | Altitudinal shift | mean elevation of suitable cells per period | `elevation_shift = FALSE`, `dem`, `elevation_basis` |
 
@@ -162,7 +162,7 @@ See `?cins_model` for the complete list.
 | `resolution` | `5` | Climate resolution (arc-min): 10, 5, 2.5, 0.5. |
 | `soil_vars`, `soil_depth`, `topography` | `NULL`, `5`, `FALSE` | Optional static predictors. |
 | `lulc_source` | `"auto"` | `"auto"`, `"mapbiomas"`, `"esa"`, raster path/`SpatRaster`, or `NULL`. |
-| `mapbiomas_collection` / `lulc_year` | `11` / `2024` | MapBiomas collection and year. |
+| `mapbiomas_collection` / `lulc_year` | `11` / `NULL` | MapBiomas collection and year (`NULL` = most recent: 2025 for Collection 11). |
 | `lulc_classes` / `lulc_groups` | `NULL` | Override habitat classes / conflict-table groups. |
 | `lulc_resolution` | `30` | Cell size (m) of realized maps; coarser = less accurate. |
 | `habitat_fraction_min` | `0.5` | Minimum habitat fraction for coarse cells. |

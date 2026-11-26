@@ -7,7 +7,7 @@
 get_lulc(
   lulc_source = "auto",
   region,
-  year = 2024,
+  year = NULL,
   collection = 11,
   esa_vars = NULL,
   cache_dir = cins_cache_dir()
@@ -18,7 +18,8 @@ get_lulc(
 
 \item{region}{\code{SpatVector} polygon (or region definition).}
 
-\item{year}{Integer. MapBiomas year.}
+\item{year}{Integer or \code{NULL}. MapBiomas year; \code{NULL} (default) uses the most
+recent year of the collection (2025 for Collection 11, 2024 for Collection 10).}
 
 \item{collection}{Integer. MapBiomas collection (11 or 10).}
 

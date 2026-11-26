@@ -137,7 +137,7 @@
 #' @param resolution Climate resolution (arc-min): 10, 5, 2.5 or 0.5.
 #' @param soil_vars,soil_depth,topography Static predictors (see [get_static_predictors()]).
 #' @param lulc_source `"auto"`, `"mapbiomas"`, `"esa"`, raster path/`SpatRaster`, or `NULL`.
-#' @param lulc_year Integer. MapBiomas year.
+#' @param lulc_year Integer or `NULL` (default: most recent year of the collection, 2025 for Collection 11).
 #' @param mapbiomas_collection Integer. 11 (default) or 10.
 #' @param lulc_classes Optional habitat classes overriding `life_form`.
 #' @param savanna_habitat Logical, required with MapBiomas: Savanna Formation (4) as habitat?
@@ -199,7 +199,7 @@ cins_model <- function(species, life_form, occurrences = NULL,
                        future_scenario = NULL, future_year = 2070, gcms = "default",
                        future_climate = NULL,
                        resolution = 5, soil_vars = NULL, soil_depth = 5, topography = FALSE,
-                       lulc_source = "auto", lulc_year = 2024, mapbiomas_collection = 11,
+                       lulc_source = "auto", lulc_year = NULL, mapbiomas_collection = 11,
                        lulc_classes = NULL, savanna_habitat = NULL, lulc_resolution = 30,
                        habitat_fraction_min = 0.5, mask_water = TRUE, conflict_table = TRUE,
                        lulc_groups = NULL,

@@ -22,7 +22,7 @@ cins_model(
   soil_depth = 5,
   topography = FALSE,
   lulc_source = "auto",
-  lulc_year = 2024,
+  lulc_year = NULL,
   mapbiomas_collection = 11,
   lulc_classes = NULL,
   savanna_habitat = NULL,
@@ -102,7 +102,7 @@ Used instead of \code{future_scenario}/\code{gcms}.}
 
 \item{lulc_source}{\code{"auto"}, \code{"mapbiomas"}, \code{"esa"}, raster path/\code{SpatRaster}, or \code{NULL}.}
 
-\item{lulc_year}{Integer. MapBiomas year.}
+\item{lulc_year}{Integer or \code{NULL} (default: most recent year of the collection, 2025 for Collection 11).}
 
 \item{mapbiomas_collection}{Integer. 11 (default) or 10.}
 

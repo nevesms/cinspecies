@@ -4,6 +4,9 @@
 .life_forms <- c("tree", "shrub", "grassland", "liana", "epiphyte")
 
 #' @noRd
+.mapbiomas_latest <- c("10" = 2024L, "11" = 2025L)
+
+#' @noRd
 .mapbiomas_url <- function(collection) {
   paste0("https://storage.googleapis.com/mapbiomas-public/initiatives/brasil/collection_", collection,
          "/lulc/coverage/brazil_coverage_%d.tif")
@@ -123,7 +126,8 @@ habitat_classes <- function(life_form, lulc_source = "mapbiomas", savanna_habita
 #'
 #' @param lulc_source See above.
 #' @param region `SpatVector` polygon (or region definition).
-#' @param year Integer. MapBiomas year.
+#' @param year Integer or `NULL`. MapBiomas year; `NULL` (default) uses the most
+#'   recent year of the collection (2025 for Collection 11, 2024 for Collection 10).
 #' @param collection Integer. MapBiomas collection (11 or 10).
 #' @param esa_vars Character. ESA layers to sum (see [habitat_classes()]).
 #' @param cache_dir Directory where data are cached.
@@ -134,7 +138,7 @@ habitat_classes <- function(life_form, lulc_source = "mapbiomas", savanna_habita
 #'
 #' Zanaga, D. et al. (2022). ESA WorldCover 10 m 2021 v200. \doi{10.5281/zenodo.7254221}
 #' @export
-get_lulc <- function(lulc_source = "auto", region, year = 2024, collection = 11, esa_vars = NULL,
+get_lulc <- function(lulc_source = "auto", region, year = NULL, collection = 11, esa_vars = NULL,
                      cache_dir = cins_cache_dir()) {
   poly <- if (inherits(region, "SpatVector")) region else get_region_polygon(region, cache_dir)
   if (identical(lulc_source, "auto")) {
@@ -176,6 +180,10 @@ get_lulc <- function(lulc_source = "auto", region, year = 2024, collection = 11,
 #' Read (window) and cache a MapBiomas annual map
 #' @noRd
 .read_mapbiomas <- function(poly, year, collection, cache_dir) {
+  if (is.null(year)) {
+    year <- .mapbiomas_latest[as.character(collection)]
+    if (is.na(year)) stop("Give `lulc_year` for MapBiomas collection ", collection, ".", call. = FALSE)
+  }
   tmpl <- getOption("cinspecies.mapbiomas_url", .mapbiomas_url(collection))
   url <- sprintf(tmpl, as.integer(year))
   e <- round(as.vector(terra::ext(poly)), 3)
